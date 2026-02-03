@@ -273,80 +273,119 @@ One of the key modelling challenges was "Sparse Data"—months where certain sta
 | `months` | `int_months_spine` | Global `generate
 
 ---
+## 🛠 Testing
+
+
+### 🛡️ Automated Schema Tests
+Standard dbt tests are applied across all models to ensure the foundation of our data is solid:
+* **Uniqueness:** Verified on `user_id` in `dim_users` and primary keys in staging models.
+* **Non-Nullity:** Mandatory for critical reporting dimensions like `year_month`, `step`, and `deal_id`.
+* **Referential Integrity:** Ensuring every `user_id` in the final mart has a corresponding record in the source system.
+
+### 🧩 Advanced Validation (dbt-utils)
+We leverage the `dbt-utils` package to enforce stricter data contracts:
+* **`accepted_range`**: Applied to `deal_count` to ensure we never report negative deals, and to `step` to keep funnel stages within the defined 0.0–16.0 range.
+* **`is_ad_hoc_range`**: Used during development to ensure no legacy "trash" data from outside our active reporting window enters the pipeline.
+
+### 🔍 Custom Singular Tests
+I have developed specialized SQL tests to catch logical errors that standard tests might miss:
+* **Stage Chronology (`assert_stage_history_chronology`):** This test uses window functions to verify that a deal's `exited_at` timestamp is never earlier than its `entered_at` timestamp.
+* ** Format Validation (`is_yyyy_mm`):** A custom macro test that uses regular expressions to ensure the `year_month` column strictly follows the `YYYY-MM` string format required by our BI tools.
+---
 ## 🛠  Test Results
 ```bash
 (base) Mac:dbt_enpal_assessment kamalkumar$ dbt clean
-13:07:00  Running with dbt=1.7.19
-13:07:00  Checking /Users/kamalkumar/projects/dbt_enpal_assessment/target/*
-13:07:00  Cleaned /Users/kamalkumar/projects/dbt_enpal_assessment/target/*
-13:07:00  Checking /Users/kamalkumar/projects/dbt_enpal_assessment/dbt_packages/*
-13:07:00  Cleaned /Users/kamalkumar/projects/dbt_enpal_assessment/dbt_packages/*
-13:07:00  Finished cleaning all paths.
-(base) Mac:dbt_enpal_assessment kamalkumar$ dbt run
-13:07:06  Running with dbt=1.7.19
-13:07:06  Registered adapter: postgres=1.10.0
-13:07:06  Unable to do partial parsing because saved manifest not found. Starting full parse.
-13:07:06  [WARNING]: Did not find matching node for patch with name 'fct_funnel_kpi_monthly' in the 'models' section of file 'models/marts/marts.yml'
-13:07:06  [WARNING]: Test 'test.enpal_assessment_project.not_null_fct_funnel_kpi_monthly_year_month.98bd82e8e7' (models/marts/marts.yml) depends on a node named 'fct_funnel_kpi_monthly' in package '' which was not found
-13:07:06  [WARNING]: Test 'test.enpal_assessment_project.not_null_fct_funnel_kpi_monthly_kpi_name.3f883329af' (models/marts/marts.yml) depends on a node named 'fct_funnel_kpi_monthly' in package '' which was not found
-13:07:06  [WARNING]: Test 'test.enpal_assessment_project.not_null_fct_funnel_kpi_monthly_deal_count.88d076b807' (models/marts/marts.yml) depends on a node named 'fct_funnel_kpi_monthly' in package '' which was not found
-13:07:06  Found 11 models, 2 tests, 6 sources, 0 exposures, 0 metrics, 445 macros, 0 groups, 0 semantic models
-13:07:06  
-13:07:06  Concurrency: 1 threads (target='dev')
-13:07:06  
-13:07:06  1 of 11 START sql table model core.dim_stages .................................. [RUN]
-13:07:06  1 of 11 OK created sql table model core.dim_stages ............................. [SELECT 9 in 0.04s]
-13:07:06  2 of 11 START sql table model core.fct_activities .............................. [RUN]
-13:07:06  2 of 11 OK created sql table model core.fct_activities ......................... [SELECT 4579 in 0.02s]
-13:07:06  3 of 11 START sql view model intermediate.int_field_configs .................... [RUN]
-13:07:06  3 of 11 OK created sql view model intermediate.int_field_configs ............... [CREATE VIEW in 0.03s]
-13:07:06  4 of 11 START sql view model intermediate.int_funnel_activities ................ [RUN]
-13:07:06  4 of 11 OK created sql view model intermediate.int_funnel_activities ........... [CREATE VIEW in 0.02s]
-13:07:06  5 of 11 START sql view model staging.stg_deal_changes .......................... [RUN]
-13:07:06  5 of 11 OK created sql view model staging.stg_deal_changes ..................... [CREATE VIEW in 0.02s]
-13:07:06  6 of 11 START sql view model staging.stg_users ................................. [RUN]
-13:07:06  6 of 11 OK created sql view model staging.stg_users ............................ [CREATE VIEW in 0.02s]
-13:07:06  7 of 11 START sql view model intermediate.int_funnel_metadata_changes .......... [RUN]
-13:07:06  7 of 11 OK created sql view model intermediate.int_funnel_metadata_changes ..... [CREATE VIEW in 0.02s]
-13:07:06  8 of 11 START sql view model intermediate.int_funnel_stages .................... [RUN]
-13:07:07  8 of 11 OK created sql view model intermediate.int_funnel_stages ............... [CREATE VIEW in 0.02s]
-13:07:07  9 of 11 START sql view model intermediate.int_months_spine ..................... [RUN]
-13:07:07  9 of 11 OK created sql view model intermediate.int_months_spine ................ [CREATE VIEW in 0.02s]
-13:07:07  10 of 11 START sql table model core.dim_users .................................. [RUN]
-13:07:07  10 of 11 OK created sql table model core.dim_users ............................. [SELECT 1787 in 0.03s]
-13:07:07  11 of 11 START sql table model marts.rep_sales_funnel_monthly .................. [RUN]
-13:07:07  11 of 11 OK created sql table model marts.rep_sales_funnel_monthly ............. [SELECT 165 in 0.07s]
-13:07:07  
-13:07:07  Finished running 4 table models, 7 view models in 0 hours 0 minutes and 0.43 seconds (0.43s).
-13:07:07  
-13:07:07  Completed successfully
-13:07:07  
-13:07:07  Done. PASS=11 WARN=0 ERROR=0 SKIP=0 TOTAL=11
+13:46:50  Running with dbt=1.7.19
+13:46:50  Checking /Users/kamalkumar/projects/dbt_enpal_assessment/dbt_packages/*
+13:46:50  Cleaned /Users/kamalkumar/projects/dbt_enpal_assessment/dbt_packages/*
+13:46:50  Checking /Users/kamalkumar/projects/dbt_enpal_assessment/target/*
+13:46:50  Cleaned /Users/kamalkumar/projects/dbt_enpal_assessment/target/*
+13:46:50  Finished cleaning all paths.
+(base) Mac:dbt_enpal_assessment kamalkumar$ dbt deps
+13:46:54  Running with dbt=1.7.19
+13:46:55  Installing dbt-labs/dbt_utils
+13:46:55  Installed from version 1.1.1
+13:46:55  Updated version available: 1.3.3
+13:46:55  
+13:46:55  Updates available for packages: ['dbt-labs/dbt_utils']                 
+Update your versions in packages.yml, then run dbt deps
 (base) Mac:dbt_enpal_assessment kamalkumar$ dbt test
-13:07:25  Running with dbt=1.7.19
-13:07:25  Registered adapter: postgres=1.10.0
-13:07:25  Found 11 models, 2 tests, 6 sources, 0 exposures, 0 metrics, 445 macros, 0 groups, 0 semantic models
-13:07:25  
-13:07:25  Concurrency: 1 threads (target='dev')
-13:07:25  
-13:07:25  1 of 2 START test not_null_dim_users_user_id ................................... [RUN]
-13:07:25  1 of 2 PASS not_null_dim_users_user_id ......................................... [PASS in 0.02s]
-13:07:25  2 of 2 START test unique_dim_users_user_id ..................................... [RUN]
-13:07:25  2 of 2 PASS unique_dim_users_user_id ........................................... [PASS in 0.01s]
-13:07:25  
-13:07:25  Finished running 2 tests in 0 hours 0 minutes and 0.14 seconds (0.14s).
-13:07:25  
-13:07:25  Completed successfully
-13:07:25  
-13:07:25  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 TOTAL=2
+13:47:02  Running with dbt=1.7.19
+13:47:02  Registered adapter: postgres=1.10.0
+13:47:02  Unable to do partial parsing because saved manifest not found. Starting full parse.
+13:47:02  Found 11 models, 11 tests, 6 sources, 0 exposures, 0 metrics, 560 macros, 0 groups, 0 semantic models
+13:47:02  
+13:47:03  Concurrency: 1 threads (target='dev')
+13:47:03  
+13:47:03  1 of 10 START test assert_stage_history_chronology ............................. [RUN]
+13:47:03  1 of 10 PASS assert_stage_history_chronology ................................... [PASS in 0.03s]
+13:47:03  2 of 10 START test dbt_utils_accepted_range_rep_sales_funnel_monthly_deal_count__0  [RUN]
+13:47:03  2 of 10 PASS dbt_utils_accepted_range_rep_sales_funnel_monthly_deal_count__0 ... [PASS in 0.01s]
+13:47:03  3 of 10 START test dbt_utils_accepted_range_rep_sales_funnel_monthly_step__16__0  [RUN]
+13:47:03  3 of 10 PASS dbt_utils_accepted_range_rep_sales_funnel_monthly_step__16__0 ..... [PASS in 0.01s]
+13:47:03  4 of 10 START test is_yyyy_mm_rep_sales_funnel_monthly_year_month .............. [RUN]
+13:47:03  4 of 10 PASS is_yyyy_mm_rep_sales_funnel_monthly_year_month .................... [PASS in 0.01s]
+13:47:03  5 of 10 START test not_null_dim_users_user_id .................................. [RUN]
+13:47:03  5 of 10 PASS not_null_dim_users_user_id ........................................ [PASS in 0.01s]
+13:47:03  6 of 10 START test not_null_rep_sales_funnel_monthly_deal_count ................ [RUN]
+13:47:03  6 of 10 PASS not_null_rep_sales_funnel_monthly_deal_count ...................... [PASS in 0.01s]
+13:47:03  7 of 10 START test not_null_rep_sales_funnel_monthly_step ...................... [RUN]
+13:47:03  7 of 10 PASS not_null_rep_sales_funnel_monthly_step ............................ [PASS in 0.01s]
+13:47:03  8 of 10 START test not_null_rep_sales_funnel_monthly_year_month ................ [RUN]
+13:47:03  8 of 10 PASS not_null_rep_sales_funnel_monthly_year_month ...................... [PASS in 0.01s]
+13:47:03  9 of 10 START test relationships_dim_users_user_id__user_id__ref_stg_users_ .... [RUN]
+13:47:03  9 of 10 PASS relationships_dim_users_user_id__user_id__ref_stg_users_ .......... [PASS in 0.01s]
+13:47:03  10 of 10 START test unique_dim_users_user_id ................................... [RUN]
+13:47:03  10 of 10 PASS unique_dim_users_user_id ......................................... [PASS in 0.01s]
+13:47:03  
+13:47:03  Finished running 10 tests in 0 hours 0 minutes and 0.24 seconds (0.24s).
+13:47:03  
+13:47:03  Completed successfully
+13:47:03  
+13:47:03  Done. PASS=10 WARN=0 ERROR=0 SKIP=0 TOTAL=10
+(base) Mac:dbt_enpal_assessment kamalkumar$ dbt run
+13:47:08  Running with dbt=1.7.19
+13:47:08  Registered adapter: postgres=1.10.0
+13:47:08  Found 11 models, 11 tests, 6 sources, 0 exposures, 0 metrics, 560 macros, 0 groups, 0 semantic models
+13:47:08  
+13:47:09  Concurrency: 1 threads (target='dev')
+13:47:09  
+13:47:09  1 of 11 START sql table model core.dim_stages .................................. [RUN]
+13:47:09  1 of 11 OK created sql table model core.dim_stages ............................. [SELECT 9 in 0.05s]
+13:47:09  2 of 11 START sql table model core.fct_activities .............................. [RUN]
+13:47:09  2 of 11 OK created sql table model core.fct_activities ......................... [SELECT 4579 in 0.02s]
+13:47:09  3 of 11 START sql view model intermediate.int_field_configs .................... [RUN]
+13:47:09  3 of 11 OK created sql view model intermediate.int_field_configs ............... [CREATE VIEW in 0.03s]
+13:47:09  4 of 11 START sql view model intermediate.int_funnel_activities ................ [RUN]
+13:47:09  4 of 11 OK created sql view model intermediate.int_funnel_activities ........... [CREATE VIEW in 0.02s]
+13:47:09  5 of 11 START sql view model staging.stg_deal_changes .......................... [RUN]
+13:47:09  5 of 11 OK created sql view model staging.stg_deal_changes ..................... [CREATE VIEW in 0.02s]
+13:47:09  6 of 11 START sql view model staging.stg_users ................................. [RUN]
+13:47:09  6 of 11 OK created sql view model staging.stg_users ............................ [CREATE VIEW in 0.02s]
+13:47:09  7 of 11 START sql view model intermediate.int_funnel_metadata_changes .......... [RUN]
+13:47:09  7 of 11 OK created sql view model intermediate.int_funnel_metadata_changes ..... [CREATE VIEW in 0.06s]
+13:47:09  8 of 11 START sql view model intermediate.int_funnel_stages .................... [RUN]
+13:47:09  8 of 11 OK created sql view model intermediate.int_funnel_stages ............... [CREATE VIEW in 0.02s]
+13:47:09  9 of 11 START sql view model intermediate.int_months_spine ..................... [RUN]
+13:47:09  9 of 11 OK created sql view model intermediate.int_months_spine ................ [CREATE VIEW in 0.02s]
+13:47:09  10 of 11 START sql table model core.dim_users .................................. [RUN]
+13:47:09  10 of 11 OK created sql table model core.dim_users ............................. [SELECT 1787 in 0.02s]
+13:47:09  11 of 11 START sql table model marts.rep_sales_funnel_monthly .................. [RUN]
+13:47:09  11 of 11 OK created sql table model marts.rep_sales_funnel_monthly ............. [SELECT 165 in 0.06s]
+13:47:09  
+13:47:09  Finished running 4 table models, 7 view models in 0 hours 0 minutes and 0.47 seconds (0.47s).
+13:47:09  
+13:47:09  Completed successfully
+13:47:09  
+13:47:09  Done. PASS=11 WARN=0 ERROR=0 SKIP=0 TOTAL=11
 (base) Mac:dbt_enpal_assessment kamalkumar$ dbt show -s rep_sales_funnel_monthly --limit 500
-13:07:53  Running with dbt=1.7.19
-13:07:54  Registered adapter: postgres=1.10.0
-13:07:54  Found 11 models, 2 tests, 6 sources, 0 exposures, 0 metrics, 445 macros, 0 groups, 0 semantic models
-13:07:54  
-13:07:54  Concurrency: 1 threads (target='dev')
-13:07:54  
-13:07:54  Previewing node 'rep_sales_funnel_monthly':
+13:47:22  Running with dbt=1.7.19
+13:47:22  Registered adapter: postgres=1.10.0
+13:47:22  Found 11 models, 11 tests, 6 sources, 0 exposures, 0 metrics, 560 macros, 0 groups, 0 semantic models
+13:47:22  
+13:47:22  Concurrency: 1 threads (target='dev')
+13:47:22  
+13:47:22  Previewing node 'rep_sales_funnel_monthly':
 | year_month | kpi_name             | step | deal_count |
 | ---------- | -------------------- | ---- | ---------- |
 | 2024-01    | Lead Generation      |  1.0 |         30 |
@@ -514,5 +553,7 @@ One of the key modelling challenges was "Sparse Data"—months where certain sta
 | 2025-01    | Renewal/Expansion    |  9.0 |         10 |
 | 2025-02    | Renewal/Expansion    |  9.0 |          1 |
 | 2025-03    | Renewal/Expansion    |  9.0 |          0 |
+
+(base) Mac:dbt_enpal_assessment kamalkumar$ 
 ```
 
