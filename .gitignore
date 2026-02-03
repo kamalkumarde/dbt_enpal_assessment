@@ -10,7 +10,7 @@ profiles.yml       # ONLY if you keep it in the project root (not recommended)
 
 # Python-specific (if using dbt-core or wrappers)
 __pycache__/
-*.pycgo
+*.pycgot
 venv/
 env/
 .python-version
