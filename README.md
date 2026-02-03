@@ -47,8 +47,6 @@ This project implements a robust, modular data warehouse using **dbt (data build
 
 I have followed the **Medallion Architecture** to ensure data integrity, scalability, and clear separation of concerns.
 
-
-
 ### 1. Staging Layer (`stg_`)
 - **Purpose:** Primary cleaning, casting, and renaming of raw source tables.
 - **Models:** `stg_users`, `stg_deal_changes`, `stg_activity`.
@@ -67,15 +65,14 @@ I have followed the **Medallion Architecture** to ensure data integrity, scalabi
 ## 🛠 Technical Highlights
 
 ### 🔹 Gap-less Funnel Reporting
-Unlike standard joins, this project uses a Cartesian product (Cross Join) between months and stages. This allows stakeholders to see exactly where the funnel "dried up" during specific periods.
+Used  cross join that  allows stakeholders to see exactly where the funnel "dried up" during specific periods.
 
 ### 🔹 Macro-Driven Mapping
 To avoid hardcoding logic in multiple places, I developed the `get_activity_step` macro. This allows for easy maintenance—if a new activity type is added to the CRM, it can be mapped to the funnel in a single line of code.
 
 
-
 ### 🔹 Step Standardization
-The funnel is filtered to focus on the active sales cycle (**Steps 1.0 through 9.0**), providing a clear view of lead progression without the noise of post-close or lost-deal metadata.
+The funnel is filtered to focus on the active sales cycle (**Steps 1.0 through 9.0**), removing the filter can enable the model to cover all the possible kpis like followup, meeting and lost cases stages
 
 ---
 ## 📂 Analysis & Modularization
@@ -195,7 +192,7 @@ with
 Markdown
 ## 🏗 Data Modelling & Schema Design
 
-This project implements a **Star Schema** approach within the dbt environment, optimizing the raw normalized CRM data into an analytics-ready dimensional model.
+This project implements a **Star Schema** approach within the dbt environment.
 
 ### 🔵 The Dimensional Model
 I have organized the data into a central **Fact table** supported by **Dimension tables** to allow for flexible slicing and dicing of funnel metrics.
@@ -205,62 +202,36 @@ I have organized the data into a central **Fact table** supported by **Dimension
     * Acts as the "Accumulating Snapshot" of the funnel performance.
 * **Dimension Tables:** * `dim_users`: Contains representative metadata (names, emails, assignment history).
     * `dim_stages`: A reference table for stage names, numeric steps, and phase categories.
-
-
-
+---
 ### 🟢 Medallion Architecture (Data Flow)
 The data flows through three distinct zones to ensure quality and lineage:
 
 1.  **Bronze (Staging):** Direct mapping of raw Postgres tables. Minimal transformation, primarily focused on renaming columns to a consistent snake_case and casting data types (e.g., timestamps).
 2.  **Silver (Intermediate):** This is where the heavy lifting occurs. Logic like **JSON parsing**, **window functions** for stage history, and **activity mapping** is performed here. These models are kept as `views` to save on storage while maintaining logic modularity.
 3.  **Gold (Marts):** Business-ready tables. The `rep_sales_funnel_monthly` table is materialized as a `table` for high-performance querying in BI tools.
-
-
-
-### 🟡 Handling Sparsity (The Master Grid)
-One of the key modelling challenges was "Sparse Data"—months where certain stages had zero activity. 
-* **Solution:** I implemented a **Cartesian Product (Cross Join)** between `int_months_spine` and `dim_stages`.
-* **Result:** This creates a dense matrix (Year-Month x Stage). When left-joined back to our deal activities, it ensures that zeros are explicitly reported rather than rows being missing.
-
+---
 ### 🧪 Entity Relationship Diagram (ERD) Overview
 * **`stg_deal_changes`** → Many-to-One → **`dim_users`** (on `user_id`)
 * **`rep_sales_funnel_monthly`** → Many-to-One → **`dim_stages`** (on `step`)
 * **`int_funnel_activities`** → One-to-Many → **`stg_deal_changes`** (on `deal_id`)
 ### 1. Funnel Stages & Lost Reasons Logic
-**Original Logic:** Used `CROSS JOIN LATERAL` with `jsonb_array_elements` to parse field options and window functions (`LEAD`) to calculate stage duration.
-
 **dbt Implementation:**
 * **Model:** `int_funnel_stages.sql`
 * **Transformation:** The logic was moved to an intermediate layer that extracts `stage_id` and `label` from the `fields` source. 
 * **Step Standardization:** * **Stages:** Mapped to numeric floats based on CRM configuration.
     * **Lost Reasons:** Dynamically shifted to **Step 10.0+** (`reason_id + 10`) to separate churn analysis from the active sales funnel.
-
-
-
-### 2. Activity Mapping & Sequencing
-**Original Logic:** Hardcoded `CASE` statements within a CTE to map activity names (e.g., 'Sales Call 1') to funnel positions.
-
-**dbt Implementation:**
-* **Macro:** `macros/get_activity_step.sql`
-* **Model:** `int_funnel_activities.sql`
-* **Benefit:** By centralizing the mapping in a Jinja macro, the logic is "DRY" (Don't Repeat Yourself). If the sales team adds a "Discovery Call," it only needs to be updated in the macro to reflect across all models.
-
-### 3. Metadata & Entry Point Tracking
-**Original Logic:** Separate CTEs for `add_time` and `user_id` to track deal creation and ownership changes.
-
+----  
 **dbt Implementation:**
 * **Model:** `int_funnel_metadata_changes.sql`
 * **Refinement:** Unified all system-level changes into a single model.
     * `add_time` is standardized to **Step 0.0** (Deal Entry).
     * `user_id` is standardized to **Step 0.1** (Assignment).
-
 ### 4. Time-Series Continuity (Date Spine)
 **Original Logic:** Repeated use of `generate_series` within every sub-query to create monthly buckets.
 
 **dbt Implementation:**
 * **Model:** `int_months_spine.sql`
-* **Refinement:** Created a single source of truth for time. The final mart performs a `CROSS JOIN` between this spine and all funnel steps. This ensures that every stage (1-9) is represented for every month, preventing "data gaps" in BI visualizations.
-
+* **Refinement:** Created a single source of truth for time. 
 ---
 
 ## 🛠 Model Mapping Summary
@@ -277,7 +248,7 @@ One of the key modelling challenges was "Sparse Data"—months where certain sta
 
 
 ### 🛡️ Automated Schema Tests
-Standard dbt tests are applied across all models to ensure the foundation of our data is solid:
+Standard dbt tests 
 * **Uniqueness:** Verified on `user_id` in `dim_users` and primary keys in staging models.
 * **Non-Nullity:** Mandatory for critical reporting dimensions like `year_month`, `step`, and `deal_id`.
 * **Referential Integrity:** Ensuring every `user_id` in the final mart has a corresponding record in the source system.
@@ -285,7 +256,6 @@ Standard dbt tests are applied across all models to ensure the foundation of our
 ### 🧩 Advanced Validation (dbt-utils)
 We leverage the `dbt-utils` package to enforce stricter data contracts:
 * **`accepted_range`**: Applied to `deal_count` to ensure we never report negative deals, and to `step` to keep funnel stages within the defined 0.0–16.0 range.
-* **`is_ad_hoc_range`**: Used during development to ensure no legacy "trash" data from outside our active reporting window enters the pipeline.
 
 ### 🔍 Custom Singular Tests
 I have developed specialized SQL tests to catch logical errors that standard tests might miss:
