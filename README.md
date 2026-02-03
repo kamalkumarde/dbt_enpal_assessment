@@ -32,53 +32,50 @@
   &nbsp;&nbsp;&nbsp;Step 9: Renewal/Expansion
 5. Column names of the reporting model: `month`, `kpi_name`, `funnel_step`, `deals_count`
 6. “Git commit” all the changes and create a PR to your forked repo (not the original one). Send your repo link to us.
-
 ---
 ## **Solution**
 
 ## Analysis 
-# 📊 Pipedrive Sales Funnel Analytics (dbt)
+#  Pipedrive Sales Funnel Analytics (dbt)
 
 This project implements a robust, modular data warehouse using **dbt (data build tool)** to transform raw Pipedrive CRM data into a clean, monthly sales funnel report.
 
 ---
-
-## 🏗 Architecture Overview
+##  Architecture Overview
 
 I have followed the **Medallion Architecture** to ensure data integrity, scalability, and clear separation of concerns.
 
-### 1. Staging Layer (`stg_`)
+### 1. Staging Layer (`stg_`)--> Bronze
 - **Purpose:** Primary cleaning, casting, and renaming of raw source tables.
 - **Models:** `stg_users`, `stg_deal_changes`, `stg_activity`.
 
-### 2. Intermediate Layer (`int_`)
+### 2. Intermediate Layer (`int_`)--> Silver
 - **`int_months_spine`**: Generates a continuous series of months to ensure no "gaps" in reporting.
 - **`int_funnel_stages`**: Parses complex JSON stage history into a flat, numeric sequence.
 - **`int_funnel_activities`**: Uses custom macros to map CRM activities (calls, emails) to specific funnel steps (e.g., Step 2.1).
 
-### 3. Core & Marts Layer
+### 3. Core & Marts Layer --> Gold
 - **`dim_users`**: A cleaned dimension table for sales representative metadata.
 - **`rep_sales_funnel_monthly`**: The final "Golden Table." It uses a **Cross Join** between the month spine and funnel stages to ensure every stage appears in every month, even if the count is zero.
-
 ---
 
-## 🛠 Technical Highlights
+##  Technical Highlights
 
-### 🔹 Gap-less Funnel Reporting
+###  Gap-less Funnel Reporting
 Used  cross join that  allows stakeholders to see exactly where the funnel "dried up" during specific periods.
 
-### 🔹 Macro-Driven Mapping
-To avoid hardcoding logic in multiple places, I developed the `get_activity_step` macro. This allows for easy maintenance—if a new activity type is added to the CRM, it can be mapped to the funnel in a single line of code.
+###  Macro-Driven Mapping
+To avoid hardcoding logic in multiple places, I developed the `get_activity_step` macro. This allows for easy maintenance, if a new activity type is added to the CRM, it can be mapped to the funnel.
 
+###  Step Standardization
 
-### 🔹 Step Standardization
-The funnel is filtered to focus on the active sales cycle (**Steps 1.0 through 9.0**), removing the filter can enable the model to cover all the possible kpis like followup, meeting and lost cases stages
+The funnel is filtered to focus on the active sales cycle (**Steps 1.0 through 9.0**), removing or altering the filter can enable the model to cover all the possible kpis like followup, meeting and lost cases stages.
 
 ---
-## 📂 Analysis & Modularization
+##  Analysis & Modularization
 
-This project evolved from a series of monolithic SQL queries into a structured dbt project. Below is the mapping of how the original analytical logic was broken down into modular components.
-### 0. Monotlith analysis queries
+This project evolved from a series of monolithic SQL queries into a structured dbt project. Below is the mapping of how the original monolithic SQL logic was broken down into modular components.
+### Phase 0. Monotlith analysis queries
 ```bash
    -- for stage transformation
 with stages_conf as (
@@ -187,14 +184,12 @@ with
          where dc.changed_field_key = 'user_id'  group by month, name
 
 ```
-
-
-Markdown
-## 🏗 Data Modelling & Schema Design
+---
+## Phase 1 Data Modelling & Schema Design
 
 This project implements a **Star Schema** approach within the dbt environment.
 
-### 🔵 The Dimensional Model
+###  The Dimensional Model
 I have organized the data into a central **Fact table** supported by **Dimension tables** to allow for flexible slicing and dicing of funnel metrics.
 
 * **Fact Table:** `rep_sales_funnel_monthly`
@@ -203,18 +198,18 @@ I have organized the data into a central **Fact table** supported by **Dimension
 * **Dimension Tables:** * `dim_users`: Contains representative metadata (names, emails, assignment history).
     * `dim_stages`: A reference table for stage names, numeric steps, and phase categories.
 ---
-### 🟢 Medallion Architecture (Data Flow)
+### Phase 2  Medallion Flow (Data Flow)
 The data flows through three distinct zones to ensure quality and lineage:
 
 1.  **Bronze (Staging):** Direct mapping of raw Postgres tables. Minimal transformation, primarily focused on renaming columns to a consistent snake_case and casting data types (e.g., timestamps).
 2.  **Silver (Intermediate):** This is where the heavy lifting occurs. Logic like **JSON parsing**, **window functions** for stage history, and **activity mapping** is performed here. These models are kept as `views` to save on storage while maintaining logic modularity.
 3.  **Gold (Marts):** Business-ready tables. The `rep_sales_funnel_monthly` table is materialized as a `table` for high-performance querying in BI tools.
 ---
-### 🧪 Entity Relationship Diagram (ERD) Overview
+###  Entity Relationship Diagram (ERD) Overview
 * **`stg_deal_changes`** → Many-to-One → **`dim_users`** (on `user_id`)
 * **`rep_sales_funnel_monthly`** → Many-to-One → **`dim_stages`** (on `step`)
 * **`int_funnel_activities`** → One-to-Many → **`stg_deal_changes`** (on `deal_id`)
-### 1. Funnel Stages & Lost Reasons Logic
+###  Funnel Stages & Lost Reasons Logic
 **dbt Implementation:**
 * **Model:** `int_funnel_stages.sql`
 * **Transformation:** The logic was moved to an intermediate layer that extracts `stage_id` and `label` from the `fields` source. 
@@ -226,16 +221,14 @@ The data flows through three distinct zones to ensure quality and lineage:
 * **Refinement:** Unified all system-level changes into a single model.
     * `add_time` is standardized to **Step 0.0** (Deal Entry).
     * `user_id` is standardized to **Step 0.1** (Assignment).
-### 4. Time-Series Continuity (Date Spine)
-**Original Logic:** Repeated use of `generate_series` within every sub-query to create monthly buckets.
-
+---      
+###  Time-Series Continuity (Date Spine)
+**Logic:** Repeated use of `generate_series` within every sub-query to create monthly buckets.
 **dbt Implementation:**
 * **Model:** `int_months_spine.sql`
 * **Refinement:** Created a single source of truth for time. 
 ---
-
-## 🛠 Model Mapping Summary
-
+##  Model Mapping Summary
 | Original CTE Component | dbt Model / Macro | Logic Summary |
 | :--- | :--- | :--- |
 | `stages_conf` | `int_funnel_stages` | Parses `stage_id` and labels from JSONB. |
@@ -244,25 +237,23 @@ The data flows through three distinct zones to ensure quality and lineage:
 | `months` | `int_months_spine` | Global `generate
 
 ---
-## 🛠 Testing
-
-
-### 🛡️ Automated Schema Tests
+##  Testing
+###  Automated Schema Tests
 Standard dbt tests 
 * **Uniqueness:** Verified on `user_id` in `dim_users` and primary keys in staging models.
 * **Non-Nullity:** Mandatory for critical reporting dimensions like `year_month`, `step`, and `deal_id`.
 * **Referential Integrity:** Ensuring every `user_id` in the final mart has a corresponding record in the source system.
-
-### 🧩 Advanced Validation (dbt-utils)
+---
+###  Validations 
 We leverage the `dbt-utils` package to enforce stricter data contracts:
 * **`accepted_range`**: Applied to `deal_count` to ensure we never report negative deals, and to `step` to keep funnel stages within the defined 0.0–16.0 range.
-
-### 🔍 Custom Singular Tests
+---
+###  Custom Singular Tests
 I have developed specialized SQL tests to catch logical errors that standard tests might miss:
 * **Stage Chronology (`assert_stage_history_chronology`):** This test uses window functions to verify that a deal's `exited_at` timestamp is never earlier than its `entered_at` timestamp.
 * ** Format Validation (`is_yyyy_mm`):** A custom macro test that uses regular expressions to ensure the `year_month` column strictly follows the `YYYY-MM` string format required by our BI tools.
 ---
-## 🛠  Test Results
+##   Test Results
 ```bash
 (base) Mac:dbt_enpal_assessment kamalkumar$ dbt clean
 13:46:50  Running with dbt=1.7.19
@@ -526,4 +517,5 @@ Update your versions in packages.yml, then run dbt deps
 
 (base) Mac:dbt_enpal_assessment kamalkumar$ 
 ```
-
+---
+## **Thanks**
