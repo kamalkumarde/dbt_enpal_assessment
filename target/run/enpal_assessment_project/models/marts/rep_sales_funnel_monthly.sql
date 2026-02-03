@@ -2,7 +2,7 @@
   
     
 
-  create  table "postgres"."marts"."fct_funnel_kpi_monthly__dbt_tmp"
+  create  table "postgres"."marts"."rep_sales_funnel_monthly__dbt_tmp"
   
   
     as
