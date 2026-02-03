@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: fct_funnel_kpi_monthly
+    description: "Monthly aggregate of the sales funnel steps 1-9."
+    columns:
+      - name: year_month  # Changed from 'month' to 'year_month'
+        tests:
+          - not_null
+      - name: kpi_name
+        tests:
+          - not_null
+      - name: deal_count
+        tests:
+          - not_null
+
+  - name: dim_users
+    columns:
+      - name: user_id
+        tests:
+          - unique
+          - not_null

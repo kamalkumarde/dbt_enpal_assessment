@@ -1,9 +1,13 @@
-with range_values as (
+with date_range as (
     select 
-        min(change_time) as start_date, 
-        max(change_time) as end_date 
-    from "postgres"."public_pipedrive_analytics"."stg_deal_changes"
+        min(change_time)::date as start_date, 
+        max(change_time)::date as end_date 
+    from "postgres"."staging"."stg_deal_changes"
 )
 select 
-    generate_series(start_date, end_date, '1 month')::date as month
-from range_values
+    generate_series(
+        date_trunc('month', start_date), 
+        date_trunc('month', end_date), 
+        '1 month'::interval
+    )::date as month_date 
+from date_range

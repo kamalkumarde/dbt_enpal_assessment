@@ -1,16 +1,16 @@
 with months as (
-    select month_date from "postgres"."intermediate"."int_months_spine"
+    select month_date from {{ ref('int_months_spine') }}
 ),
 
 -- Get every unique stage/kpi name that exists in your funnel
 all_stages as (
     select distinct kpi_name, step 
     from (
-        select kpi_name, step from "postgres"."intermediate"."int_funnel_stages"
+        select kpi_name, step from {{ ref('int_funnel_stages') }}
         union all
-        select kpi_name, step from "postgres"."intermediate"."int_funnel_activities"
+        select kpi_name, step from {{ ref('int_funnel_activities') }}
         union all
-        select kpi_name, step from "postgres"."intermediate"."int_funnel_metadata_changes"
+        select kpi_name, step from {{ ref('int_funnel_metadata_changes') }}
     )
     where step >= 1 and step <= 9
 ),
@@ -26,11 +26,11 @@ grid as (
 ),
 
 unioned_data as (
-    select month, kpi_name, step, deal_id from "postgres"."intermediate"."int_funnel_stages"
+    select month, kpi_name, step, deal_id from {{ ref('int_funnel_stages') }}
     union all
-    select month, kpi_name, step, deal_id from "postgres"."intermediate"."int_funnel_activities"
+    select month, kpi_name, step, deal_id from {{ ref('int_funnel_activities') }}
     union all
-    select month, kpi_name, step, deal_id from "postgres"."intermediate"."int_funnel_metadata_changes"
+    select month, kpi_name, step, deal_id from {{ ref('int_funnel_metadata_changes') }}
 )
 
 select 

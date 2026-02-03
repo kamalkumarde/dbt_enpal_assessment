@@ -30,7 +30,16 @@ clean-targets:         # directories to be removed by `dbt clean`
 # directory as views. These settings can be overridden in the individual model
 # files using the `{{ config(...) }}` macro.
 models:
-  enpal_assessment_project:
-    # Config indicated by + and applies to all files under models/example/
-    +schema: pipedrive_analytics
-    +materialized: table
+  enpal_assessment_project: # Replace with your actual project name from dbt_project.yml
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: view  # Change from ephemeral to view so you can see them in Postgres
+    core:
+      +schema: core
+      +materialized: table
+    marts:
+      +schema: marts
+      +materialized: table

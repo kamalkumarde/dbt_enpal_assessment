@@ -1,13 +1,8 @@
 
-  
+  create view "postgres"."intermediate"."int_field_configs__dbt_tmp"
     
-
-  create  table "postgres"."public_pipedrive_analytics"."int_field_configs__dbt_tmp"
-  
-  
-    as
-  
-  (
+    
+  as (
     select
     field_key,
     name as field_display_name,
@@ -16,4 +11,3 @@
 from "postgres"."public"."fields"
 cross join lateral jsonb_array_elements(field_value_options) as elem
   );
-  
