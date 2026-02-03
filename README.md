@@ -72,6 +72,15 @@ To avoid hardcoding logic in multiple places, I developed the `get_activity_step
 The funnel is filtered to focus on the active sales cycle (**Steps 1.0 through 9.0**), removing or altering the filter can enable the model to cover all the possible kpis like followup, meeting and lost cases stages.
 
 ---
+
+##  Further improvement not considered in interest of time and scope.
+
+### 1. Partition and Indexing strategy
+### 2. Datawarehousing sink like bigquery or Snowflake
+### 3. Deep modeling of other entities like Users in activity and deal changes that are mutually exclusive.
+
+
+
 ##  Analysis & Modularization
 
 This project evolved from a series of monolithic SQL queries into a structured dbt project. Below is the mapping of how the original monolithic SQL logic was broken down into modular components.
