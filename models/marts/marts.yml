@@ -1,18 +1,28 @@
 version: 2
 
 models:
-  - name: fct_funnel_kpi_monthly
-    description: "Monthly aggregate of the sales funnel steps 1-9."
+  - name: rep_sales_funnel_monthly
+    description: "Final monthly funnel aggregation with gap-filling."
     columns:
-      - name: year_month  # Changed from 'month' to 'year_month'
+      - name: year_month
+        description: "Format: YYYY-MM"
         tests:
           - not_null
-      - name: kpi_name
+          - is_yyyy_mm
+          
+
+      - name: step
         tests:
           - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 16 # Covers 0.0 through 15.1
+      
       - name: deal_count
         tests:
           - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0 # Business logic: Can't have negative deals
 
   - name: dim_users
     columns:
@@ -20,3 +30,6 @@ models:
         tests:
           - unique
           - not_null
+          - relationships:
+              to: ref('stg_users')
+              field: user_id
