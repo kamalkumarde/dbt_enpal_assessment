@@ -1,7 +1,7 @@
 with validation as (
     select 
         deal_id,
-        -- We'll use coalesce to catch whichever column name you used
+        
         entered_at, 
         exited_at
     from {{ ref('int_funnel_stages') }}
