@@ -261,8 +261,6 @@ One of the key modelling challenges was "Sparse Data"—months where certain sta
 * **Model:** `int_months_spine.sql`
 * **Refinement:** Created a single source of truth for time. The final mart performs a `CROSS JOIN` between this spine and all funnel steps. This ensures that every stage (1-9) is represented for every month, preventing "data gaps" in BI visualizations.
 
-
-
 ---
 
 ## 🛠 Model Mapping Summary
@@ -275,3 +273,246 @@ One of the key modelling challenges was "Sparse Data"—months where certain sta
 | `months` | `int_months_spine` | Global `generate
 
 ---
+## 🛠  Test Results
+```bash
+(base) Mac:dbt_enpal_assessment kamalkumar$ dbt clean
+13:07:00  Running with dbt=1.7.19
+13:07:00  Checking /Users/kamalkumar/projects/dbt_enpal_assessment/target/*
+13:07:00  Cleaned /Users/kamalkumar/projects/dbt_enpal_assessment/target/*
+13:07:00  Checking /Users/kamalkumar/projects/dbt_enpal_assessment/dbt_packages/*
+13:07:00  Cleaned /Users/kamalkumar/projects/dbt_enpal_assessment/dbt_packages/*
+13:07:00  Finished cleaning all paths.
+(base) Mac:dbt_enpal_assessment kamalkumar$ dbt run
+13:07:06  Running with dbt=1.7.19
+13:07:06  Registered adapter: postgres=1.10.0
+13:07:06  Unable to do partial parsing because saved manifest not found. Starting full parse.
+13:07:06  [WARNING]: Did not find matching node for patch with name 'fct_funnel_kpi_monthly' in the 'models' section of file 'models/marts/marts.yml'
+13:07:06  [WARNING]: Test 'test.enpal_assessment_project.not_null_fct_funnel_kpi_monthly_year_month.98bd82e8e7' (models/marts/marts.yml) depends on a node named 'fct_funnel_kpi_monthly' in package '' which was not found
+13:07:06  [WARNING]: Test 'test.enpal_assessment_project.not_null_fct_funnel_kpi_monthly_kpi_name.3f883329af' (models/marts/marts.yml) depends on a node named 'fct_funnel_kpi_monthly' in package '' which was not found
+13:07:06  [WARNING]: Test 'test.enpal_assessment_project.not_null_fct_funnel_kpi_monthly_deal_count.88d076b807' (models/marts/marts.yml) depends on a node named 'fct_funnel_kpi_monthly' in package '' which was not found
+13:07:06  Found 11 models, 2 tests, 6 sources, 0 exposures, 0 metrics, 445 macros, 0 groups, 0 semantic models
+13:07:06  
+13:07:06  Concurrency: 1 threads (target='dev')
+13:07:06  
+13:07:06  1 of 11 START sql table model core.dim_stages .................................. [RUN]
+13:07:06  1 of 11 OK created sql table model core.dim_stages ............................. [SELECT 9 in 0.04s]
+13:07:06  2 of 11 START sql table model core.fct_activities .............................. [RUN]
+13:07:06  2 of 11 OK created sql table model core.fct_activities ......................... [SELECT 4579 in 0.02s]
+13:07:06  3 of 11 START sql view model intermediate.int_field_configs .................... [RUN]
+13:07:06  3 of 11 OK created sql view model intermediate.int_field_configs ............... [CREATE VIEW in 0.03s]
+13:07:06  4 of 11 START sql view model intermediate.int_funnel_activities ................ [RUN]
+13:07:06  4 of 11 OK created sql view model intermediate.int_funnel_activities ........... [CREATE VIEW in 0.02s]
+13:07:06  5 of 11 START sql view model staging.stg_deal_changes .......................... [RUN]
+13:07:06  5 of 11 OK created sql view model staging.stg_deal_changes ..................... [CREATE VIEW in 0.02s]
+13:07:06  6 of 11 START sql view model staging.stg_users ................................. [RUN]
+13:07:06  6 of 11 OK created sql view model staging.stg_users ............................ [CREATE VIEW in 0.02s]
+13:07:06  7 of 11 START sql view model intermediate.int_funnel_metadata_changes .......... [RUN]
+13:07:06  7 of 11 OK created sql view model intermediate.int_funnel_metadata_changes ..... [CREATE VIEW in 0.02s]
+13:07:06  8 of 11 START sql view model intermediate.int_funnel_stages .................... [RUN]
+13:07:07  8 of 11 OK created sql view model intermediate.int_funnel_stages ............... [CREATE VIEW in 0.02s]
+13:07:07  9 of 11 START sql view model intermediate.int_months_spine ..................... [RUN]
+13:07:07  9 of 11 OK created sql view model intermediate.int_months_spine ................ [CREATE VIEW in 0.02s]
+13:07:07  10 of 11 START sql table model core.dim_users .................................. [RUN]
+13:07:07  10 of 11 OK created sql table model core.dim_users ............................. [SELECT 1787 in 0.03s]
+13:07:07  11 of 11 START sql table model marts.rep_sales_funnel_monthly .................. [RUN]
+13:07:07  11 of 11 OK created sql table model marts.rep_sales_funnel_monthly ............. [SELECT 165 in 0.07s]
+13:07:07  
+13:07:07  Finished running 4 table models, 7 view models in 0 hours 0 minutes and 0.43 seconds (0.43s).
+13:07:07  
+13:07:07  Completed successfully
+13:07:07  
+13:07:07  Done. PASS=11 WARN=0 ERROR=0 SKIP=0 TOTAL=11
+(base) Mac:dbt_enpal_assessment kamalkumar$ dbt test
+13:07:25  Running with dbt=1.7.19
+13:07:25  Registered adapter: postgres=1.10.0
+13:07:25  Found 11 models, 2 tests, 6 sources, 0 exposures, 0 metrics, 445 macros, 0 groups, 0 semantic models
+13:07:25  
+13:07:25  Concurrency: 1 threads (target='dev')
+13:07:25  
+13:07:25  1 of 2 START test not_null_dim_users_user_id ................................... [RUN]
+13:07:25  1 of 2 PASS not_null_dim_users_user_id ......................................... [PASS in 0.02s]
+13:07:25  2 of 2 START test unique_dim_users_user_id ..................................... [RUN]
+13:07:25  2 of 2 PASS unique_dim_users_user_id ........................................... [PASS in 0.01s]
+13:07:25  
+13:07:25  Finished running 2 tests in 0 hours 0 minutes and 0.14 seconds (0.14s).
+13:07:25  
+13:07:25  Completed successfully
+13:07:25  
+13:07:25  Done. PASS=2 WARN=0 ERROR=0 SKIP=0 TOTAL=2
+(base) Mac:dbt_enpal_assessment kamalkumar$ dbt show -s rep_sales_funnel_monthly --limit 500
+13:07:53  Running with dbt=1.7.19
+13:07:54  Registered adapter: postgres=1.10.0
+13:07:54  Found 11 models, 2 tests, 6 sources, 0 exposures, 0 metrics, 445 macros, 0 groups, 0 semantic models
+13:07:54  
+13:07:54  Concurrency: 1 threads (target='dev')
+13:07:54  
+13:07:54  Previewing node 'rep_sales_funnel_monthly':
+| year_month | kpi_name             | step | deal_count |
+| ---------- | -------------------- | ---- | ---------- |
+| 2024-01    | Lead Generation      |  1.0 |         30 |
+| 2024-02    | Lead Generation      |  1.0 |        194 |
+| 2024-03    | Lead Generation      |  1.0 |        199 |
+| 2024-04    | Lead Generation      |  1.0 |        230 |
+| 2024-05    | Lead Generation      |  1.0 |        248 |
+| 2024-06    | Lead Generation      |  1.0 |        244 |
+| 2024-07    | Lead Generation      |  1.0 |        267 |
+| 2024-08    | Lead Generation      |  1.0 |        240 |
+| 2024-09    | Lead Generation      |  1.0 |        210 |
+| 2024-10    | Lead Generation      |  1.0 |        120 |
+| 2024-11    | Lead Generation      |  1.0 |         18 |
+| 2024-12    | Lead Generation      |  1.0 |          0 |
+| 2025-01    | Lead Generation      |  1.0 |          0 |
+| 2025-02    | Lead Generation      |  1.0 |          0 |
+| 2025-03    | Lead Generation      |  1.0 |          0 |
+| 2024-01    | Qualified Lead       |  2.0 |          6 |
+| 2024-02    | Qualified Lead       |  2.0 |         74 |
+| 2024-03    | Qualified Lead       |  2.0 |        157 |
+| 2024-04    | Qualified Lead       |  2.0 |        153 |
+| 2024-05    | Qualified Lead       |  2.0 |        178 |
+| 2024-06    | Qualified Lead       |  2.0 |        178 |
+| 2024-07    | Qualified Lead       |  2.0 |        190 |
+| 2024-08    | Qualified Lead       |  2.0 |        191 |
+| 2024-09    | Qualified Lead       |  2.0 |        175 |
+| 2024-10    | Qualified Lead       |  2.0 |        129 |
+| 2024-11    | Qualified Lead       |  2.0 |         49 |
+| 2024-12    | Qualified Lead       |  2.0 |          3 |
+| 2025-01    | Qualified Lead       |  2.0 |          0 |
+| 2025-02    | Qualified Lead       |  2.0 |          0 |
+| 2025-03    | Qualified Lead       |  2.0 |          0 |
+| 2024-01    | Sales Call 1         |  2.1 |        148 |
+| 2024-02    | Sales Call 1         |  2.1 |        117 |
+| 2024-03    | Sales Call 1         |  2.1 |        125 |
+| 2024-04    | Sales Call 1         |  2.1 |        134 |
+| 2024-05    | Sales Call 1         |  2.1 |        122 |
+| 2024-06    | Sales Call 1         |  2.1 |        141 |
+| 2024-07    | Sales Call 1         |  2.1 |        165 |
+| 2024-08    | Sales Call 1         |  2.1 |        130 |
+| 2024-09    | Sales Call 1         |  2.1 |         63 |
+| 2024-10    | Sales Call 1         |  2.1 |          0 |
+| 2024-11    | Sales Call 1         |  2.1 |          0 |
+| 2024-12    | Sales Call 1         |  2.1 |          0 |
+| 2025-01    | Sales Call 1         |  2.1 |          0 |
+| 2025-02    | Sales Call 1         |  2.1 |          0 |
+| 2025-03    | Sales Call 1         |  2.1 |          0 |
+| 2024-01    | Needs Assessment     |  3.0 |          0 |
+| 2024-02    | Needs Assessment     |  3.0 |         27 |
+| 2024-03    | Needs Assessment     |  3.0 |        142 |
+| 2024-04    | Needs Assessment     |  3.0 |        131 |
+| 2024-05    | Needs Assessment     |  3.0 |        149 |
+| 2024-06    | Needs Assessment     |  3.0 |        168 |
+| 2024-07    | Needs Assessment     |  3.0 |        168 |
+| 2024-08    | Needs Assessment     |  3.0 |        175 |
+| 2024-09    | Needs Assessment     |  3.0 |        128 |
+| 2024-10    | Needs Assessment     |  3.0 |        138 |
+| 2024-11    | Needs Assessment     |  3.0 |         67 |
+| 2024-12    | Needs Assessment     |  3.0 |         14 |
+| 2025-01    | Needs Assessment     |  3.0 |          1 |
+| 2025-02    | Needs Assessment     |  3.0 |          0 |
+| 2025-03    | Needs Assessment     |  3.0 |          0 |
+| 2024-01    | Sales Call 2         |  3.1 |        139 |
+| 2024-02    | Sales Call 2         |  3.1 |        117 |
+| 2024-03    | Sales Call 2         |  3.1 |        148 |
+| 2024-04    | Sales Call 2         |  3.1 |        123 |
+| 2024-05    | Sales Call 2         |  3.1 |        132 |
+| 2024-06    | Sales Call 2         |  3.1 |        127 |
+| 2024-07    | Sales Call 2         |  3.1 |        135 |
+| 2024-08    | Sales Call 2         |  3.1 |        140 |
+| 2024-09    | Sales Call 2         |  3.1 |         63 |
+| 2024-10    | Sales Call 2         |  3.1 |          0 |
+| 2024-11    | Sales Call 2         |  3.1 |          0 |
+| 2024-12    | Sales Call 2         |  3.1 |          0 |
+| 2025-01    | Sales Call 2         |  3.1 |          0 |
+| 2025-02    | Sales Call 2         |  3.1 |          0 |
+| 2025-03    | Sales Call 2         |  3.1 |          0 |
+| 2024-01    | Proposal/Quote Pr... |  4.0 |          1 |
+| 2024-02    | Proposal/Quote Pr... |  4.0 |         17 |
+| 2024-03    | Proposal/Quote Pr... |  4.0 |         75 |
+| 2024-04    | Proposal/Quote Pr... |  4.0 |        100 |
+| 2024-05    | Proposal/Quote Pr... |  4.0 |        122 |
+| 2024-06    | Proposal/Quote Pr... |  4.0 |        138 |
+| 2024-07    | Proposal/Quote Pr... |  4.0 |        127 |
+| 2024-08    | Proposal/Quote Pr... |  4.0 |        156 |
+| 2024-09    | Proposal/Quote Pr... |  4.0 |        131 |
+| 2024-10    | Proposal/Quote Pr... |  4.0 |        118 |
+| 2024-11    | Proposal/Quote Pr... |  4.0 |         72 |
+| 2024-12    | Proposal/Quote Pr... |  4.0 |         28 |
+| 2025-01    | Proposal/Quote Pr... |  4.0 |          2 |
+| 2025-02    | Proposal/Quote Pr... |  4.0 |          0 |
+| 2025-03    | Proposal/Quote Pr... |  4.0 |          0 |
+| 2024-01    | Negotiation          |  5.0 |          0 |
+| 2024-02    | Negotiation          |  5.0 |         10 |
+| 2024-03    | Negotiation          |  5.0 |         51 |
+| 2024-04    | Negotiation          |  5.0 |         85 |
+| 2024-05    | Negotiation          |  5.0 |         97 |
+| 2024-06    | Negotiation          |  5.0 |        114 |
+| 2024-07    | Negotiation          |  5.0 |         96 |
+| 2024-08    | Negotiation          |  5.0 |        104 |
+| 2024-09    | Negotiation          |  5.0 |        131 |
+| 2024-10    | Negotiation          |  5.0 |        110 |
+| 2024-11    | Negotiation          |  5.0 |         64 |
+| 2024-12    | Negotiation          |  5.0 |         28 |
+| 2025-01    | Negotiation          |  5.0 |          5 |
+| 2025-02    | Negotiation          |  5.0 |          0 |
+| 2025-03    | Negotiation          |  5.0 |          0 |
+| 2024-01    | Closing              |  6.0 |          0 |
+| 2024-02    | Closing              |  6.0 |          8 |
+| 2024-03    | Closing              |  6.0 |         28 |
+| 2024-04    | Closing              |  6.0 |         72 |
+| 2024-05    | Closing              |  6.0 |         84 |
+| 2024-06    | Closing              |  6.0 |         89 |
+| 2024-07    | Closing              |  6.0 |         95 |
+| 2024-08    | Closing              |  6.0 |         99 |
+| 2024-09    | Closing              |  6.0 |         78 |
+| 2024-10    | Closing              |  6.0 |         84 |
+| 2024-11    | Closing              |  6.0 |         60 |
+| 2024-12    | Closing              |  6.0 |         34 |
+| 2025-01    | Closing              |  6.0 |         10 |
+| 2025-02    | Closing              |  6.0 |          0 |
+| 2025-03    | Closing              |  6.0 |          0 |
+| 2024-01    | Implementation/On... |  7.0 |          0 |
+| 2024-02    | Implementation/On... |  7.0 |          1 |
+| 2024-03    | Implementation/On... |  7.0 |         21 |
+| 2024-04    | Implementation/On... |  7.0 |         43 |
+| 2024-05    | Implementation/On... |  7.0 |         49 |
+| 2024-06    | Implementation/On... |  7.0 |         70 |
+| 2024-07    | Implementation/On... |  7.0 |         91 |
+| 2024-08    | Implementation/On... |  7.0 |         74 |
+| 2024-09    | Implementation/On... |  7.0 |         70 |
+| 2024-10    | Implementation/On... |  7.0 |         79 |
+| 2024-11    | Implementation/On... |  7.0 |         50 |
+| 2024-12    | Implementation/On... |  7.0 |         29 |
+| 2025-01    | Implementation/On... |  7.0 |          9 |
+| 2025-02    | Implementation/On... |  7.0 |          2 |
+| 2025-03    | Implementation/On... |  7.0 |          0 |
+| 2024-01    | Follow-up/Custome... |  8.0 |          0 |
+| 2024-02    | Follow-up/Custome... |  8.0 |          0 |
+| 2024-03    | Follow-up/Custome... |  8.0 |         12 |
+| 2024-04    | Follow-up/Custome... |  8.0 |         33 |
+| 2024-05    | Follow-up/Custome... |  8.0 |         59 |
+| 2024-06    | Follow-up/Custome... |  8.0 |         65 |
+| 2024-07    | Follow-up/Custome... |  8.0 |         55 |
+| 2024-08    | Follow-up/Custome... |  8.0 |         74 |
+| 2024-09    | Follow-up/Custome... |  8.0 |         51 |
+| 2024-10    | Follow-up/Custome... |  8.0 |         52 |
+| 2024-11    | Follow-up/Custome... |  8.0 |         46 |
+| 2024-12    | Follow-up/Custome... |  8.0 |         20 |
+| 2025-01    | Follow-up/Custome... |  8.0 |         10 |
+| 2025-02    | Follow-up/Custome... |  8.0 |          2 |
+| 2025-03    | Follow-up/Custome... |  8.0 |          0 |
+| 2024-01    | Renewal/Expansion    |  9.0 |          0 |
+| 2024-02    | Renewal/Expansion    |  9.0 |          2 |
+| 2024-03    | Renewal/Expansion    |  9.0 |          7 |
+| 2024-04    | Renewal/Expansion    |  9.0 |         23 |
+| 2024-05    | Renewal/Expansion    |  9.0 |         25 |
+| 2024-06    | Renewal/Expansion    |  9.0 |         42 |
+| 2024-07    | Renewal/Expansion    |  9.0 |         48 |
+| 2024-08    | Renewal/Expansion    |  9.0 |         37 |
+| 2024-09    | Renewal/Expansion    |  9.0 |         43 |
+| 2024-10    | Renewal/Expansion    |  9.0 |         36 |
+| 2024-11    | Renewal/Expansion    |  9.0 |         31 |
+| 2024-12    | Renewal/Expansion    |  9.0 |         19 |
+| 2025-01    | Renewal/Expansion    |  9.0 |         10 |
+| 2025-02    | Renewal/Expansion    |  9.0 |          1 |
+| 2025-03    | Renewal/Expansion    |  9.0 |          0 |
+```
+
