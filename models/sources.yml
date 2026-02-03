@@ -1,8 +1,12 @@
 version: 2
 
 sources:
-  - name: postgres_public
-    database: postgres
-    schema: public
+  - name: raw
+    schema: public 
     tables:
+      - name: deal_changes
+      - name: fields
       - name: activity
+      - name: activity_types
+      - name: stages
+      - name: users

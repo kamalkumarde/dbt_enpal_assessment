@@ -1,0 +1,11 @@
+version: 2
+models:
+  - name: fct_funnel_kpi_monthly
+    description: "Monthly aggregated funnel metrics including stages, activities, and metadata changes."
+    columns:
+      - name: month
+        tests:
+          - not_null
+      - name: deal_count
+        tests:
+          - not_null

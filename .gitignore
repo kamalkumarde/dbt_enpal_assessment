@@ -1,0 +1,21 @@
+# dbt specific
+target/            # Compiled SQL and artifacts
+dbt_packages/      # Installed packages (managed via packages.yml)
+dbt_modules/       # Legacy directory for packages (older dbt versions)
+logs/              # Log files generated during runs
+
+# Environment & Credentials
+.env               # Environment variables (often containing DB passwords)
+profiles.yml       # ONLY if you keep it in the project root (not recommended)
+
+# Python-specific (if using dbt-core or wrappers)
+__pycache__/
+*.pycgo
+venv/
+env/
+.python-version
+
+# IDE & OS f
+.DS_Store          # macOS
+.vscode/           # VS Code settings
+.idea/             # PyCharm/IntelliJ settings
